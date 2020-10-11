@@ -1,4 +1,3 @@
-#Oscar Castro
 #! /usr/bin/env python3
 
 # Client program
@@ -12,9 +11,9 @@ from framedSock import framedSend, framedReceive
 
 
 switchesVarDefaults = (
-    (('-s', '--server'), 'server', "127.0.0.1:50001"),
-    (('-p', '--proxy'), "proxy", False), # boolean (set if present)
-    (('-?', '--usage'), "usage", False), # boolean (set if present)
+    (('-s', '--server'),'server', "127.0.0.1:50001"),
+    (('-p', '--proxy'), 'proxy', False), # boolean (set if present)
+    (('-?', '--usage'), 'usage', False), # boolean (set if present)
     )
 
 paramMap = params.parseParams(switchesVarDefaults)
@@ -28,7 +27,7 @@ try:
     serverPort = int(serverPort)
 
 except:
-    print('ERROR: Can\'t parse server:port from %s' %server)
+    print("ERROR: Can't parse server:port from '%s'" %server)
     sys.exit(1)
 
 

@@ -1,4 +1,3 @@
-#Oscar Castro
 #!/usr/bin/env python3
 
 import socket, re, sys, os
@@ -33,9 +32,9 @@ token = '0'
 fileData = ''
 
 serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-bindAddr = ("", listenPort)
+bindAddr = ("127.0.0.1", listenPort)
 serverSocket.bind(bindAddr)
-serverSocket.listen(2)
+serverSocket.listen(5)
 print("listening to client...")
 
 
@@ -65,7 +64,7 @@ while True:
                 file = None
                 fileData = None
                 framedSend(sock, token.encode(), False)
-                print("Sending... Token: " + token)
+                print("Sending... Token")
 
             else:
                 token = infoData[0]
