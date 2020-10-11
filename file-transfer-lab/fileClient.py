@@ -1,5 +1,5 @@
 #Oscar Castro
-#!/usr/bin/env python3
+#! /usr/bin/env python3
 
 # Client program
 import socket, sys, re
@@ -48,45 +48,63 @@ clientSocket.connect(addrPort)
 # loop through the server program
 while True:
     try: # get a token to check if the connection worked
-        token = clientSocket.recv(1024).decode() if not proxy else framedSend(clientSocket, False)
+        token = framedReceive(clientSocket, False).decode()
         print("Token: %s" %token)
     except ConnectionResetError:
         print("Lost connection to server...")
         break
 
-    file = input('Enter name of file: ') # input from user
+    file = str(input('File: ')) # input from user
+    fileTokens = re.split(' +', file)
     data = ''  # data that will be in the file provided
-    if file == 'exit':
-        clientSocket.send(file.encode()) if not proxy else frameSend(clientSocket,
-                                                                     file.encode(), False)
+
+    #parse tokens
+    if len(fileTokens) == 3:
+        comm = fileTokens[0]
+        localFile = fileTokens[1]
+        remoteFile = fileTokens[2]
+    elif len(fileTokens) == 2:
+        comm = fileTokens[0]
+        localFile = fileTokens[1]
+        remoteFile = fileTokens[2]
+    elif fileTokens[0] == 'exit': #end client if exit is inputted
+        framedSend(clientSocket, fileTokens[0].encode(), False)
         break
-
-    try: # make sure the file the user inputted exists
-        path = './' + file
-        fileInput = open(path, 'r')
-    except FileNotFoundError:
-        print("File %s does not exist" %file)
-        file = None
-        data = None
-
-    if data is not None: # add data
-        data = fileInput.readlines()
-        if fileInput:
-            for d in range(len(data)):
-                data[d] = token + ", " + file + ": " + data[d]
-
-            for info in data:
-                print("Sending: %s" %info, end='')
-                clientSocket.send(info.encode()) if not proxy else frameSend(clientSocket,
-                                                                             info.encode(), False)
-            fileInput.close() # finish with file
-            token = str(int(token) + 1)
-            clientSocket.send(token.encode()) if not proxy else framedSend(clientSocket,
-                                                                           token.encode(), False)
-
     else:
-        print("File %s does not exist or has no data" %file)
-        clientSocket.send(token.encode()) if not proxy else framedSend(clientSocket,
-                                                                       token.encode(), False)
+        comm = None
+        localFile = None
+        remoteFile = None
+
+    if comm == 'put':
+        try: # make sure the file the user inputted exists and its valid
+            path = './' + localFile
+            fileInput = open(path, 'r')
+        except FileNotFoundError:
+            print("File %s does not exist" %localFile)
+            fileInput = None
+            data = None
+        except PermissionError:
+            print("Invalid Address")
+            fileInput = None
+            data = None
+
+        if data is not None: # add data
+            data = fileInput.readlines()
+            if fileInput:
+                for d in range(len(data)):
+                    data[d] = token + "- " + localFile + ": " + data[d]
+
+                for info in data:
+                    print("Sending: %s" %info, end='')
+                    framedSend(clientSocket, token.encode(), False)
+
+                fileInput.close() # finish with file
+                token = str(int(token) + 1)
+                framedSend(clientSocket, token.encode(), False)
+                
+    else:
+        print("File %s does not exist or has no data" %localFile)
+        print("put <local-file> <remote-file>")
+        framedSend(clientSocket, token.encode(), False)
             
 clientSocket.close()
