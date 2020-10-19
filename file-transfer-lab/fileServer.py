@@ -46,13 +46,6 @@ while True:
     if not os.fork():
         while True:
             data = framedReceive(sock, False).decode()
-            if not data:
-                if file not in files:
-                    print("File not found")
-                    break
-                
-            if proxy:
-                data = data.decode()
                     
             if data == "exit":
                 break
