@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import socket, re, sys, os
+import socket, re, sys, os, time, threading
 
 sys.path.append('./lib')
 
@@ -32,22 +32,51 @@ serverSocket.bind(bindAddr)
 serverSocket.listen(5)
 print("listening to client...")
 
+lock = threading.Lock()
+
 
 class Server(Thread):
     def __init__(self, sockAddr):
         Thread.__init__(self)
         self.sock, self.addr = sockAddr
-        self.fsock = EncapFramedSock(sockAddr)
+        self.threadSock = EncapFramedSock(sockAddr)
+
+    def write_file(self, filename, data):
+        try:
+            # check if the dir exists else create it
+            if not os.path.exists("./serverFiles/"):
+                os.makedirs("./serverFiles/")
+
+            # create the file and write to it.
+            file_writer = open("./serverFiles/" + filename, 'w+b')
+            file_writer.write(data)
+            print("Writing to file...")
+
+            # close file
+            file_writer.close()
+            print("file %s was recieved from address %s" %(filename, self.addr))
+        except FileNotFoundError:
+            print("ERROR: file %s not found " % filename)
+            sys.exit(1)
 
     def run(self):
         print("new thread handling connection from", self.addr)
         while True:
-            payload = self.fsock.receive(False)
-            if not payload:
-                self.fsock.close()
-                return
-            payload += b"!"
-            self.fsock.send(payload, False)
+            filename, data = self.threadSock.receive()
+            
+            # if data was not received close client
+            if filename is None or data is None:
+                print("client ", self.addr, " disconnected")
+                sys.exit(0)
+
+            lock.acquire()
+
+            # write to file and save it
+            filename = filename.decode()
+            print(self.addr, " will attempt to save file %s" % filename)
+            self.write_file(filename, data)
+
+            lock.release()
 
 
 while True:

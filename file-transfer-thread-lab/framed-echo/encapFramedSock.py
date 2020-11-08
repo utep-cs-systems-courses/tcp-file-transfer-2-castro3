@@ -6,9 +6,9 @@ class EncapFramedSock:               # a facade
     self.rbuf = b""         # receive buffer
   def close(self):
     return self.sock.close()
-  def send(self, payload, debugPrint=0):
+  def send(self, filename, payload, debugPrint=0):
     if debugPrint: print("framedSend: sending %d byte message" % len(payload))
-    msg = str(len(payload)).encode() + b':' + payload
+    msg = str(len(payload)).encode() + b':' + filename.encode() + b':' + payload
     while len(msg):
       nsent = self.sock.send(msg)
       msg = msg[nsent:]
@@ -17,25 +17,25 @@ class EncapFramedSock:               # a facade
     msgLength = -1
     while True:
       if (state == "getLength"):
-        match = re.match(b'([^:]+):(.*)', self.rbuf, re.DOTALL | re.MULTILINE) # look for colon
+        match = re.match(b'([^:]+):(.*):(.*)', self.rbuf, re.DOTALL | re.MULTILINE) # look for colon
         if match:
-          lengthStr, self.rbuf = match.groups()
+          lengthStr, filename, self.rbuf = match.groups()
           try: 
             msgLength = int(lengthStr)
           except:
             if len(self.rbuf):
               print("badly formed message length:", lengthStr)
-              return None
+              return None, None
           state = "getPayload"
       if state == "getPayload":
         if len(self.rbuf) >= msgLength:
          payload = self.rbuf[0:msgLength]
          self.rbuf = self.rbuf[msgLength:]
-         return payload
+         return filename, payload
       r = self.sock.recv(100)
       self.rbuf += r
       if len(r) == 0:
         if len(self.rbuf) != 0:
          print("FramedReceive: incomplete message. \n state=%s, length=%d, self.rbuf=%s" % (state, msgLength, self.rbuf))
-        return None
+        return None, None
       if debugPrint: print("FramedReceive: state=%s, length=%d, self.rbuf=%s" % (state, msgLength, self.rbuf))
