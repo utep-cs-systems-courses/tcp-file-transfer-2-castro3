@@ -46,11 +46,18 @@ class Server(Thread):
             # check if the dir exists else create it
             if not os.path.exists("./serverFiles/"):
                 os.makedirs("./serverFiles/")
+                
+            # check if the file recieved is not on the server already
+            if os.path.exists("./serverFiles/" + filename):
+                print("File already exists on server. Not sent.")
+                return
 
+            lock.acquire()
             # create the file and write to it.
             file_writer = open("./serverFiles/" + filename, 'w+b')
             file_writer.write(data)
             print("Writing to file...")
+            lock.release()
 
             # close file
             file_writer.close()
@@ -69,14 +76,10 @@ class Server(Thread):
                 print("client ", self.addr, " disconnected")
                 sys.exit(0)
 
-            lock.acquire()
-
             # write to file and save it
             filename = filename.decode()
             print(self.addr, " will attempt to save file %s" % filename)
             self.write_file(filename, data)
-
-            lock.release()
 
 
 while True:
